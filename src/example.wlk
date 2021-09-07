@@ -4,6 +4,7 @@ object pantalla {
 	var capturas=0
 	const alto=18
 	const ancho=18
+	const pokemones = [ pikachu, metapod, rat, fish]
 	method iniciar() {
 			
 	  game.height(alto)
@@ -11,55 +12,47 @@ object pantalla {
       game.title('Pokemons: Atrapalos ya!')
       game.boardGround("img/wallpaper.png")
       game.addVisual(ash)
-      game.addVisual(pikachu)
-	  game.addVisual(metapod)
-	  game.addVisual(rat)
-	  game.addVisual(fish)
+      
+//    game.addVisual(pikachu)
+//	  game.addVisual(metapod)
+//	  game.addVisual(rat)
+//	  game.addVisual(fish)
 	  
 	  keyboard.left().onPressDo({ash.moverseIzquierda() })
       keyboard.right().onPressDo({ash.moverseDerecha() })
       keyboard.down().onPressDo({ash.moverseAbajo() })
       keyboard.up().onPressDo({ash.moverseArriba() })
-      
-     keyboard.a().onPressDo({ash.dispara(1) })
-     keyboard.s().onPressDo({ash.dispara(2) })
-      
-      game.whenCollideDo(pikachu,{algo => 
-      	if (algo.esPokebola()){
-      	pikachu.esAtrapado()
-      	game.say(ash,"pikachu te atrapé!")
-      	capturas += 1
-      	self.checkEndGame()}
-      })
-	  game.whenCollideDo(metapod,{algo =>
-	  	if (algo.esPokebola()){
-	  	metapod.esAtrapado()
-	  	game.say(ash,"muy lento metapod")
-	    capturas += 1
-      	self.checkEndGame()}
-	  })
-	  game.whenCollideDo(rat,{algo =>
-	  	if (algo.esPokebola()){
-	  	rat.esAtrapado()
-	  	game.say(ash,"sí!")
-	  	capturas += 1
-      	self.checkEndGame()}
-	  })
-	  game.whenCollideDo(fish,{algo =>
-	  	if (algo.esPokebola()){
-	  	fish.esAtrapado()
-	    game.say(ash,"sí!")
-	    capturas += 1
-      	self.checkEndGame()}
-	  })
+
+//      game.whenCollideDo(pikachu,
+//      	{algo => algo.teColisiono(pikachu)}
+//      )
+//	  game.whenCollideDo(metapod,
+//	  	{algo => algo.teColisiono(metapod)}
+//	  )
+//	  game.whenCollideDo(rat,
+//	  	 {algo => algo.teColisiono(rat)}
+//	  )
+//	  game.whenCollideDo(fish,
+//	  	{algo => algo.teColisiono(fish)}
+//	  )
 	  
-	   game.onTick(5000, "corre pikachu",{pikachu.corre()})
-	   game.onTick(7000, "corre metapod",{metapod.corre()})
-	   game.onTick(1000, "corre rat",{rat.corre()})
-	   game.onTick(5000, "corre fish",{fish.corre()})
-	  game.start()	
+	  pokemones.forEach( 
+	       {unPokemon => game.addVisual(unPokemon)
+	       				 game.onTick(unPokemon.velocidad(), unPokemon.movimiento(),{self.haceCorrerA(unPokemon)})
+	       	             game.whenCollideDo(unPokemon,{algo => algo.teColisiono(unPokemon)})
+	       }) 
+
+//	   game.onTick(pikachu.velocidad(), pikachu.movimiento(),{self.haceCorrerA(pikachu)})
+//	   game.onTick(metapod.velocidad(), metapod.movimiento(),{self.haceCorrerA(metapod)})
+//	   game.onTick(rat.velocidad(), rat.movimiento(),{self.haceCorrerA(rat)})
+//	   game.onTick(fish.velocidad(), fish.movimiento(),{self.haceCorrerA(fish)})
+    keyboard.a().onPressDo({ash.dispara(1) })
+    keyboard.s().onPressDo({ash.dispara(2) })
+
+  game.start()	
 		
 	}
+	method sumarCaptura() { capturas += 1}
 	
 	method limites(posicion){
 		var nuevaPos = posicion
@@ -68,14 +61,17 @@ object pantalla {
 		if(posicion.y() >= alto) nuevaPos = game.at(nuevaPos.x(),alto-1)
 		if(posicion.y() < 0) nuevaPos = game.at(nuevaPos.x(),0)
 		return nuevaPos
-		
 	} 
 	
 	method checkEndGame(){
-		
 		if(capturas==4){
 		 game.say(ash,"Hemos ganado!")
 		}
+	}
+	method haceCorrerA(pokemon) {
+		const vertical = (-5..5).anyOne()
+		const horizontal = (-5..5).anyOne()
+		pokemon.position(self.limites(pokemon.position().right(horizontal).up(vertical)))
 	}
 }
 
@@ -106,32 +102,19 @@ object ash{
 	}
 	
 	method dispara(direccion) {
-		pokebola.setPosition(self.position())
+		pokebola.position(self.position())
 		game.addVisual(pokebola)	
 		pokebola.hacia(direccion)
 		game.schedule(200, {pokebola.vuelve()})			
 	}
 		
-	method esAtrapado(){		
-	}
-	
-	method esPokebola(){
-		return false
-	}
+	method teColisiono(alguien){}	
 }
 
 object pokebola{
-	var position = ash.position()
+	var property position = ash.position()
 	
-	method position(){
-		return position
-	}
-	
-	method setPosition(posicion){
-		position=posicion
-	}
-	
-		method image(){
+	method image(){
 		return "img/pokebola.png"
 	}
 	
@@ -151,126 +134,64 @@ object pokebola{
 		method esPokebola(){
 		return true
 	}
+	method teColisiono(pokemon){
+      	self.esAtrapado(pokemon)
+      	game.say(ash,pokemon.saludo())
+      	pantalla.sumarCaptura()
+      	pantalla.checkEndGame()
+	}
+	
+	method esAtrapado(pokemon){
+	  pokemon.position(pantalla.limites(position.up(3)))
+	  game.removeTickEvent(pokemon.movimiento())
+	  pokemon.image("img/atrapado.png")
+	  game.schedule(3000, {game.removeVisual(pokemon)})
+	}
 }
 
 object pikachu{
-	var position = game.at(2,3)
-	var image = "img/pikachu.png"
+	var property position = game.at(2,3)
+	var property image = "img/pikachu.png"
 	
-		method position(){
-		return position
-	}
-	method image(){
-		return image
-	}
+	method movimiento() = "corre pikachu"
 	
-	
-	method esAtrapado(){
-	  position=pantalla.limites(position.up(3))
-	  game.removeTickEvent("corre pikachu")
-	  image = "img/atrapado.png"
-	  game.schedule(3000, {game.removeVisual(self)})
-	  
-	}
-	
-	method corre(){
-	
-	const vertical = (-5..5).anyOne()
-	const horizontal = (-5..5).anyOne()
-	position=pantalla.limites(position.right(horizontal).up(vertical))
-	}
-	
-	method esPokebola(){
-		return false
-	}
-	 
+     method saludo() = "pikachu te atrapé!"
+     
+     method teColisiono(alguien){}
+	 	method velocidad() = 7000
 }
 
 object metapod{
-	var position = game.at(4,15)
-	var image = "img/metapod.png"
+	var property position = game.at(4,15)
+	var property image = "img/metapod.png"
 	
-		method position(){
-		return position
-	}
-	method image(){
-		return image
-	}
-	
-	method esAtrapado(){
-	  position=pantalla.limites(position.up(3))
-	  game.removeTickEvent("corre metapod")
-	  image = "img/atrapado.png"
-	  game.schedule(3000, {game.removeVisual(self)})	
-	} 
-	
-	method corre(){
-	
-	const vertical = (-5..5).anyOne()
-	const horizontal = (-5..5).anyOne()
-	position=pantalla.limites(position.right(horizontal).up(vertical))
-	}
-	
-	method esPokebola(){
-		return false
-	}
+    method movimiento() = "corre metapod"	
+ 	method saludo() = "muy lento metapod"
+ 	method teColisiono(alguien){ }
+ 	method velocidad() = 1000
 }
 
 object rat{
-	var position = game.at(17,18)
-	var image = "img/rat.png"
+	var property position = game.at(17,18)
+	var property image = "img/rat.png"
 	
-		method position(){
-		return position
-	}
-	method image(){
-		return image
-	}
+	method movimiento() = "corre rat"
 	
-	method esAtrapado(){
-	  position=pantalla.limites(position.up(3))
-	  game.removeTickEvent("corre rat")
-	  image = "img/atrapado.png"
-	  game.schedule(3000, {game.removeVisual(self)})	
-	}
-	
-	method corre(){
-	
-	const vertical = (-5..5).anyOne()
-	const horizontal = (-5..5).anyOne()
-	position=pantalla.limites(position.right(horizontal).up(vertical))
-	} 
-	
-	method esPokebola(){
-		return false
-	}
+ 	method teColisiono(alguien){ }
+ 	method saludo() = "si"
+	method velocidad() = 7000
+
 }
 
 object fish{
-	var position = game.at(16,4)
-	var image = "img/fish.png"
-		method position(){
-		return position
-	}
-	method image(){
-		return image
-	}
+	var property position = game.at(16,4)
+	var property image = "img/fish.png"
+
+	method movimiento() = "corre fish"
 	
-	method esAtrapado(){
-	  position=pantalla.limites(position.up(3))
-	  game.removeTickEvent("corre fish")
-	  image = "img/atrapado.png"
-	  game.schedule(3000, {game.removeVisual(self)})	
-	}
-	
-	method corre(){
-	
-	const vertical = (-5..5).anyOne()
-	const horizontal = (-5..5).anyOne()
-	position=pantalla.limites(position.right(horizontal).up(vertical))
-	}
-	
-	method esPokebola(){
-		return false
-	}
+ 	method teColisiono(alguien){ }
+ 	method velocidad() = 5000
+ 	
+ 	method saludo() = "tambien digo si"
+
 }
