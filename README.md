@@ -9,4 +9,4 @@ Presiona "b" para disparar hacia la derecha.<br>
 
 Cuando consigas atrapar a todos, habrás ganado!
 
-Obs: En esta primer versión no se utiliza Clases y Herencia por lo cual hay código repetido.
+Obs: En esta primer versión no se utilizan los conceptos de Clases ni Herencia por lo cual hay código repetido.
