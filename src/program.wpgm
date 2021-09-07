@@ -1,0 +1,8 @@
+import example.*
+
+
+program pokemones {
+
+	pantalla.iniciar()
+
+}
